@@ -1,0 +1,4 @@
+Kafka-connect with Stream API
+
+https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=58851767#KIP-26-AddKafkaConnectframeworkfordataimport/export-EmbeddedAPI
+
