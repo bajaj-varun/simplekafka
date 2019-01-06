@@ -1,0 +1,18 @@
+{
+        "name": "mysql_connect",
+        "config": {
+         	"connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+		"key.converter": "org.apache.kafka.connect.json.JsonConverter",
+		"key.converter.schema.registry.url": "http://localhost:8081",
+
+         	"value.converter": "org.apache.kafka.connect.json.JsonConverter",
+         	"value.converter.schema.registry.url": "http://localhost:8081",
+		"dialect.name":"MySqlDatabaseDialect",
+		"connection.url": "jdbc:mysql://localhost:3306/test?user=root&password=",
+        	"table.whitelist": "data",
+        	"connection.user":"root",
+		"validate.non.null":"false",	
+		"mode": "bulk",
+      		"topic.prefix": "user-"
+        }
+}
