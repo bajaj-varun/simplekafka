@@ -13,12 +13,13 @@ User_42 --> ([ 1511263168089 | 'User_42' | 'Region_5' | 'OTHER' ]) ts:1546493752
 ```
 
 # Validate schema on schema-registry
-`$ curl "http://localhost:8081/subjects"`
-`["users-value"]`
+```$ curl "http://localhost:8081/subjects"
+["users-value"]
+```
 
 # Get schema of topic values
-`$ curl "http://localhost:8081/subjects/users-value/versions"`
-`[1,2,3]`
+```$ curl "http://localhost:8081/subjects/users-value/versions"
+[1,2,3]```
 
 `# curl "http://localhost:8081/subjects/users-value/versions/3"`
 ```
@@ -29,8 +30,8 @@ User_42 --> ([ 1511263168089 | 'User_42' | 'Region_5' | 'OTHER' ]) ts:1546493752
 ```
 {
 	"type": "record",
-	"name": "Users",
-	"namespace": "com.example",
+	"name": "KsqlDataSourceSchema",
+	"namespace": "io.confluent.ksql.avro_schemas",
 	"fields": [{
 		"name": "registertime",
 		"type": ["null", "long"],
@@ -49,4 +50,16 @@ User_42 --> ([ 1511263168089 | 'User_42' | 'Region_5' | 'OTHER' ]) ts:1546493752
 		"default": null
 	}]
 }
+```
+
+### Important : Point to note here to keep namespace-io.confluent.ksql.avro_schemas, and class-"KsqlDataSourceSchema". More details can be found at - https://github.com/confluentinc/ksql/pull/1863
+
+Test first stream - SimpleStreamJoin.java
+```
+[KSTREAM-SOURCE-0000000000]: User_32, {"registertime": 1516026799546, "userid": "User_32", "regionid": "Region_8", "gender": "FEMALE"}
+[KSTREAM-SOURCE-0000000000]: User_32, {"registertime": 1505517042726, "userid": "User_32", "regionid": "Region_7", "gender": "MALE"}
+[KSTREAM-SOURCE-0000000000]: User_12, {"registertime": 1518486459580, "userid": "User_12", "regionid": "Region_3", "gender": "OTHER"}
+[KSTREAM-SOURCE-0000000000]: User_72, {"registertime": 1487993659517, "userid": "User_72", "regionid": "Region_1", "gender": "FEMALE"}
+[KSTREAM-SOURCE-0000000000]: User_22, {"registertime": 1509434179667, "userid": "User_22", "regionid": "Region_6", "gender": "FEMALE"}
+[KSTREAM-SOURCE-0000000000]: User_52, {"registertime": 1503698765232, "userid": "User_52", "regionid": "Region_2", "gender": "FEMALE"}
 ```
