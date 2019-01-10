@@ -13,13 +13,13 @@ User_42 --> ([ 1511263168089 | 'User_42' | 'Region_5' | 'OTHER' ]) ts:1546493752
 ```
 
 # Validate schema on schema-registry
-```$ curl "http://localhost:8081/subjects"
-["users-value"]
-```
+    $ curl "http://localhost:8081/subjects"
+    ["users-value"]
+
 
 # Get schema of topic values
-```$ curl "http://localhost:8081/subjects/users-value/versions"
-[1,2,3]```
+    $ curl "http://localhost:8081/subjects/users-value/versions"
+    [1,2,3]
 
 `# curl "http://localhost:8081/subjects/users-value/versions/3"`
 ```
