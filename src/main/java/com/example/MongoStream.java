@@ -10,7 +10,7 @@ import org.bson.Document;
 
 import java.util.Arrays;
 
-public class PersonalCustMaint {
+public class ABC {
     public static void main(String[] args) {
         /*final  String COL1 = "XXX";
         final  String COL2 = "XXX";*/
