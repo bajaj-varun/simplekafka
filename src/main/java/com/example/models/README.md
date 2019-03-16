@@ -15,7 +15,7 @@ ksql-datagen bootstrap-server=localhost:9092 quickstart=pageviews format=avro to
 
 *Image of sample data generation*
 
-![Sample data](../../../../../../images/dataGen.png)
+![Sample data](../../../../../../images/dataGen.PNG)
 
 *Pageviews schema*
 ```json
