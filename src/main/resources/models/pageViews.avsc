@@ -1,0 +1,18 @@
+{
+    "type": "record",
+    "name": "KsqlDataSourceSchema",
+    "namespace": "io.confluent.ksql.avro_schemas",
+    "fields": [{
+        "name": "viewtime",
+        "type": ["null", "long"],
+        "default": null
+    }, {
+        "name": "userid",
+        "type": ["null", "string"],
+        "default": null
+    }, {
+        "name": "pageid",
+        "type": ["null", "string"],
+        "default": null
+    }]
+}
