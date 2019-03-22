@@ -53,7 +53,7 @@ public class PageViews {
         //userStream.foreach((k,v) -> System.out.println("Key =>"+k.toString()+", v=>"+v.toString()));
 
         stream.join(userStream,
-                (k,v)->"K=>"+k+", v=>"+v.toString(),
+                (k,v)->"K=>"+k+", V=>"+v.toString(),
                 JoinWindows.of(TimeUnit.SECONDS.toMillis(10000)),
                 Joined.with(
                         Serdes.String(),

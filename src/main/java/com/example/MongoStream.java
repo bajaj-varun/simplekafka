@@ -1,3 +1,5 @@
+package com.example;
+
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -10,13 +12,10 @@ import org.bson.Document;
 
 import java.util.Arrays;
 
-public class ABC {
+public class MongoStream {
     public static void main(String[] args) {
-        /*final  String COL1 = "XXX";
-        final  String COL2 = "XXX";*/
-
-        final  String COL1 = "XXX";
-        final  String COL2 = "XXX";
+        final  String COL1 = "col1";
+        final  String COL2 = "col2";
 
         MongoClientURI mongoClientURI = new MongoClientURI("mongodb://XXXX:XXXX@XXX/");
         final MongoClient mongoClient = new MongoClient(mongoClientURI);
@@ -37,12 +36,6 @@ public class ABC {
                         Aggregates.out(COL2)
                 ));
                 output.batchSize(1000).allowDiskUse(true);
-
-                /*MongoCursor<Document> iterator = output.iterator();
-                while (iterator.hasNext()) {
-                    Document next = iterator.next();
-                    System.out.println("updated Record => "+next.toString());
-                }*/
             }
         };
 

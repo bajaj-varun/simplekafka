@@ -43,6 +43,21 @@
             <artifactId>kafka-streams-avro-serde</artifactId>
             <version>5.1.0</version>
         </dependency>
+
+        <!--MongoDB drivers-->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.11.0-beta1</version>
+        </dependency>
+
+        <!--CSV Parser-->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.6</version>
+        </dependency>
+
     </dependencies>
 
     <build>
