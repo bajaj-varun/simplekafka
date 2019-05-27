@@ -1,0 +1,149 @@
+**Read "WiredTiger timestamp support" => it is new imporvment in 4.0 to reduce latency to replicate data from Primary to secondary so that readFromSecondary should see latest data in without waiting write logs to apply from Primary to secondary.
+** GrapgLookup doesnot support "allowDiskUses" keyword.
+
+Covered Query
+1) A covered query is a query that can be satisfied entirely using an index and does not have to examine any documents. An index covers a query when both of the following apply:
+	- all the fields in the query are part of an index, and
+	- all the fields returned in the results are in the same index.
+	You can't cover a query if
+	* Any of the index fields are array.
+	* Any of index fields are embeded documents.
+	* When run against monos and index does not contain shard key.
+	
+2) You may not create compound indexes that have hashed index type. You will receive an error if you attempt to create a compound index that includes a hashed index field.
+3) Hashed indexes cannot be unique.
+
+Prefixes
+{ "item": 1, "location": 1, "stock": 1 }
+
+The index has the following index prefixes:
+	{ item: 1 }
+	{ item: 1, location: 1 }
+
+For a compound index, MongoDB can use the index to support queries on the index prefixes. As such, MongoDB can use the index for queries on the following fields:
+
+the item field,
+the item field and the location field,
+the item field and the location field and the stock field.
+
+Index Prefix Intersection
+With index intersection, MongoDB can use an intersection of either the entire index or the index prefix. An index prefix is a subset of a compound index, consisting of one or more keys starting from the beginning of the index.
+
+{ qty: 1 }
+{ status: 1, ord_date: -1 }
+
+To fulfill the following query which specifies a condition on both the qty field and the status field, MongoDB can use the intersection of the two indexes:
+db.orders.find( { qty: { $gt: 10 } , status: "A" } )	
+
+Index Intersection and Sort
+
+Index intersection does not apply when the sort() operation requires an index completely separate from the query predicate.
+
+For example, the orders collection has the following indexes:
+{ qty: 1 }
+{ status: 1, ord_date: -1 }
+{ status: 1 }
+{ ord_date: -1 }
+
+MongoDB cannot use index intersection for the following query with sort:
+db.orders.find( { qty: { $gt: 10 } } ).sort( { status: 1 } )
+
+However, MongoDB can use index intersection for the following query with sort since the index { status: 1, ord_date: -1 } can fulfill part of the query predicate.
+db.orders.find( { qty: { $gt: 10 } , status: "A" } ).sort( { ord_date: -1 } )
+
+*By default, creating an index on a populated collection blocks all other operations on a database. When building an index on a populated collection, the database that holds the collection is unavailable for read or write operations until the index build completes.
+
+Background Construction
+For potentially long running index building operations on standalone deployments, consider the background option so that the MongoDB database remains available during the index building operation.
+
+*db.people.createIndex( { zipcode: 1 }, { background: true } )
+
+By default, *background is false* for building MongoDB indexes. You can combine the background option with other options
+*db.people.createIndex( { zipcode: 1 }, { background: true, sparse: true } )
+
+*Background indexing operations run in the background so that other database operations can run while creating the index. However, the mongo shell session or connection where you are creating the index will block until the index build is complete. To continue issuing commands to the database, open another connection or mongo instance.
+
+*If MongoDB is building an index in the background, you cannot perform other administrative operations involving that collection, including running repairDatabase, dropping the collection (i.e. db.collection.drop()), and running compact. These operations will return an error during background index builds.
+
+Performance
+*The background index operation uses an incremental approach that is slower than the normal “foreground” index builds. If the index is larger than the available RAM, then the incremental process can take much longer than the foreground build.
+
+*Building an index can have a severe impact on the performance of the database. If possible, build indexes during designated maintenance windows.
+
+*Changed in version 3.4: You can build one or more indexes on a collection with the database command createIndexes. The default limit on memory usage for a createIndexes operation is 500 megabytes. You can override this limit by setting the *maxIndexBuildMemoryUsageMegabytes* server parameter.
+
+*createIndexes uses a combination of memory and temporary files on disk to complete index builds. Once the memory limit is reached, createIndexes uses temporary disk files in a subdirectory named _tmp within the --dbpath directory for additional scratch space. The higher the memory limit is set, the faster the index build can complete, but be careful not to set this limit too high relative to available RAM or your system can run out of free memory.
+
+**Interrupted Index Builds
+*If a background index build is in progress when a standalone (i.e. not a member of a replica set) mongod terminates, when the instance restarts the index build will restart as foreground index build. If the index build encounters any errors, such as a duplicate key error, the mongod will exit with an error.
+
+*To start the mongod standalone (i.e. not a member of a replica set) after a failed index build, use the *storage.indexBuildRetry* or *--noIndexBuildRetry* to skip the index build on start up.
+
+** MONGODB 4.0+ You cannot specify storage.indexBuildRetry or --noIndexBuildRetry for a mongod that is part of a replica set.
+
+Rollbacks and Background Index Builds
+Starting in version 4.0, MongoDB waits for any in-progress background index builds to finish before starting a rollback.
+
+Build Indexes on Replica Sets and Sharded Clusters
+To minimize the impact of building an index on replica sets and sharded clusters with replica set shards, use a rolling index build procedure as described on Build Indexes on Replica Sets.
+
+*If not using the rolling index build procedure:
+	- A *foreground index* build on a primary requires a DB lock. It replicates as a foreground index build on replica set secondaries, and the replication worker takes a global DB lock that queues reads and writes to all databases on the indexing server.
+	- A *background index* build on a primary replicates as background index builds on secondaries. The replication worker does not take a global DB lock, and secondary reads are not affected.
+	- For both foreground and background index builds on the primary, the index operations on replica set secondaries begin after the primary finishes building the index.
+
+Index Names
+1) The default name for an index is the concatenation of the indexed keys and each key’s direction in the index, 1 or -1.
+	- Optionally, you can specify a name for an index instead of using the default name.
+	* db.products.createIndex( { item: 1, quantity: -1 } , { name: "inventory" } )
+
+View Index Build Operations
+
+1) To see the status of an index build operation, you can use the *db.currentOp()* method in the mongo shell. To filter the current operations for index creation operations, see Active Indexing Operations for an example.
+	db.currentOp(
+    {
+      $or: [
+        { op: "command", "query.createIndexes": { $exists: true } },
+        { op: "none", ns: /\.system\.indexes\b/ }
+      ]
+    }
+	)
+
+	The "msg" field will include the percent of the build that is complete.
+	
+** Options for All Index Types
+1) partialFilterExpression	- Optional. If specified, the index only references documents that match the filter expression. See Partial Indexes for more information.
+Partial indexes only index the documents in a collection that meet a specified filter expression. By indexing a subset of the documents in a collection, partial indexes have lower storage requirements and reduced performance costs for index creation and maintenance.
+db.restaurants.createIndex(
+   { cuisine: 1, name: 1 },
+   { partialFilterExpression: { rating: { $gt: 5 } } }
+)
+
+2) TIP:Partial indexes represent a superset of the functionality offered by sparse indexes and should be preferred over sparse indexes. (Sparse indexes select documents to index solely based on the existence of the indexed field, or for compound indexes, the existence of the indexed fields.)
+3) If a sparse index would result in an incomplete result set for queries and sort operations, MongoDB will not use that index unless a hint() explicitly specifies the index.
+
+	A filter expression can include:
+	1) equality expressions (i.e. field: value or using the $eq operator),
+	2) $exists: true expression,
+	3) $gt, $gte, $lt, $lte expressions,
+	4) $type expressions,
+	5) $and operator at the top-level only
+	You can specify a partialFilterExpression option for all MongoDB index types.	
+	
+2) expireAfterSeconds - Optional. Specifies a value, in seconds, as a TTL to control how long MongoDB retains documents in this collection.
+3) storageEngine - 	Optional. Allows users to configure the storage engine on a per-index basis when creating an index.
+	The storageEngine option should take the following form:
+	storageEngine: { <storage-engine-name>: <options> }
+	Storage engine configuration options specified when creating indexes are validated and logged to the oplog during replication to support replica sets with members that use different storage engines.
+
+** compact
+Rewrites and defragments all data and indexes in a collection. On WiredTiger databases, this command will release unneeded disk space to the operating system.
+
+{ compact: <collection name> }
+
+**repairDatabase
+Rebuilds the database and indexes by discarding invalid or corrupt data that may be present due to an unexpected system restart or shutdown. repairDatabase is analogous to a fsck command for file systems.
+
+{ repairDatabase: 1 }
+
+	

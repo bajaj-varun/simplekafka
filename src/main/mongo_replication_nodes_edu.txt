@@ -1,0 +1,57 @@
+1) You can configure a secondary member for a specific purpose. You can configure a secondary to:
+	a) Prevent it from becoming a primary in an election, which allows it to reside in a secondary data center or to serve as a cold standby. See "Priority 0 Replica Set Members".
+	b) Prevent applications from reading from it, which allows it to run applications that require separation from normal traffic. See "Hidden Replica Set Members".
+	c) Keep a running “historical” snapshot for use in recovery from certain errors, such as unintentionally deleted databases. See "Delayed Replica Set Members".
+
+Priority 0 Replica Set Members
+1) A priority 0 member is a member that cannot become primary and cannot trigger elections. 
+2) Priority 0 members can acknowledge write operations issued with write concern of w : <number>. For "majority" write concern, the priority 0 member must also be a voting member (i.e. members[n].votes is greater than 0) to acknowledge the write.
+
+Hidden Replica Set Members
+1) A hidden member maintains a copy of the primary’s data set but is invisible to client applications. 
+2) Hidden members are good for workloads with different usage patterns from the other members in the replica set. 
+3) Hidden members must always be priority 0 members and so cannot become primary. 
+4) The db.isMaster() method does not display hidden members. Hidden members, however, may vote in elections.
+
+Delayed Replica Set Members
+1) Delayed members contain copies of a replica set’s data set. 
+2) However, a delayed member’s data set reflects an earlier, or delayed, state of the set. 
+3) Because delayed members are a “rolling backup” or a running “historical” snapshot of the data set, they may help you recover from various kinds of human error.
+Behavior
+1) Delayed members copy and apply operations from the source oplog on a delay. When choosing the amount of delay, consider that the amount of delay:
+	- must be equal to or greater than your expected maintenance window durations.
+	- must be smaller than the capacity of the oplog. For more information on oplog size
+
+Replica Set Oplog
+1) The oplog (operations log) is a special capped collection that keeps a rolling record of all operations that modify the data stored in your databases.
+2) MongoDB applies database operations on the primary and then records the operations on the primary’s oplog. 
+3) The secondary members then copy and apply these operations in an asynchronous process.
+4) All replica set members contain a copy of the oplog, in the "local.oplog.rs" collection, which allows them to maintain the current state of the database.
+5) Any secondary member can import oplog entries from any other member.
+6) Each operation in the oplog is idempotent. That is, oplog operations produce the same results whether applied once or multiple times to the target dataset.
+7) Before mongod creates an oplog, you can specify its size with the oplogSizeMB option. Once you have started a replica set member for the first time, use the replSetResizeOplog administrative command to change the oplog size. replSetResizeOplog enables you to resize the oplog dynamically without restarting the mongod process.
+8) To view oplog status, including the size and the time range of operations, issue the "rs.printReplicationInfo()"
+
+WiredTiger Storage Engine
+1) WiredTiger uses "document-level concurrency" control for write operations. As a result, multiple clients can modify different documents of a collection at the same time.
+2) For most read and write operations, WiredTiger uses optimistic concurrency control. WiredTiger uses only intent locks at the global, database and collection levels. When the storage engine detects conflicts between two operations, one will incur a write conflict causing MongoDB to transparently retry that operation.
+3) Some global operations, typically short lived operations involving multiple databases, still require a global “instance-wide” lock. Some other operations, such as dropping a collection, still require an exclusive database lock.
+
+** Snapshots and Checkpoints
+1) WiredTiger uses MultiVersion Concurrency Control (MVCC). At the start of an operation, WiredTiger provides a point-in-time snapshot of the data to the operation. A snapshot presents a consistent view of the in-memory data.
+2) When writing to disk, WiredTiger writes all the data in a snapshot to disk in a consistent way across all data files. The now-durable data act as a checkpoint in the data files. The checkpoint ensures that the data files are consistent up to and including the last checkpoint; i.e. checkpoints can act as recovery points.
+3) Starting in version 3.6, MongoDB configures WiredTiger to create checkpoints (i.e. write the snapshot data to disk) at intervals of 60 seconds. In earlier versions, MongoDB sets checkpoints to occur in WiredTiger on user data at an interval of 60 seconds or when 2 GB of journal data has been written, whichever occurs first.
+4) During the write of a new checkpoint, the previous checkpoint is still valid. As such, even if MongoDB terminates or encounters an error while writing a new checkpoint, upon restart, MongoDB can recover from the last valid checkpoint.
+5) The new checkpoint becomes accessible and permanent when WiredTiger’s metadata table is atomically updated to reference the new checkpoint. Once the new checkpoint is accessible, WiredTiger frees pages from the old checkpoints.
+
+**Using WiredTiger, even without journaling, MongoDB can recover from the last checkpoint; however, to recover changes made after the last checkpoint, run with journaling.
+** NOTE:Starting in MongoDB 4.0, you cannot specify --nojournal option or storage.journal.enabled: false for replica set members that use the WiredTiger storage engine.
+
+Journal
+1) WiredTiger uses a write-ahead log (i.e. journal) in combination with checkpoints to ensure data durability.
+2) The WiredTiger journal persists all data modifications between checkpoints. If MongoDB exits between checkpoints, it uses the journal to replay all data modified since the last checkpoint.
+3) WiredTiger journal is compressed using the snappy compression library.
+4) To specify a different compression algorithm or no compression, use the "storage.wiredTiger.engineConfig.journalCompressor" setting.
+5) NOTE: If a log record less than or equal to 128 bytes (the mininum log record size for WiredTiger), WiredTiger does not compress that record.
+
+

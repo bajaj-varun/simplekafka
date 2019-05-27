@@ -1,0 +1,46 @@
+1) parition data using shard keys, into collection.
+2) range defines non overlapping range, keys and values associated in chunks.
+3) Shard key and value are immutable.
+4) Shard key can;t be changed for collection.
+5) Shard key values can;t be changed.
+6) To shard collection, define shard key and namespace (db.collection)
+   sh.shardCollection(namespace, key)
+
+7) Key parameter consist document and index traversal direction.
+8) Sharding strategies
+	8.1) Hashed Sharding.
+	8.2) Ranged Sharding.
+	
+Hashed Sharding -
+1) Use hased index on single field.
+2) Provide evan data distribution but cost by broadcast	operations.
+3) With hashed sharding, close shard key value are less likely to store on same shard, result to boradcast operation.
+
+Enable sharding for database - sh.enableSharding("db")
+Shard collection - sh.shardCollection("<database>.<collection>", { <shard key> : "hashed" } )
+1) Must have enable sharding for database to enable shard a collection
+2) If collection already have data so create hashed index first on shard key.
+3) If collection is empty, mongo will automatically create hashed index on shard key.
+4) Must specify full namespace of collection and shard key.
+5) Selection of shard key affects the efficiency of sharding, also ability to take advantage of sharding features like *Zones* 
+* From mongo4.0 - provide method, *convertShardKeyToHashed()*. The method use same hashing function as hashed index.
+
+Ranged Sharding - sh.shardCollection("<database>.<collection>", { <shard key> : <direction> } )
+1) MongoDb automatically divides data into continious range of shard key.
+2) Document with close shard value resides in same shard.
+3) Provide efficiency when need to query on ranges.
+4) If collection already has data then define index on shard-key.
+5) If collection is empty then mongoDB will create index automatically.
+
+Zones
+1) Can create Zone of shard data based on shard key.
+2) Can associate zone with one or more shard.
+3) Shard can associate with any number of zones.
+4) Each zone convers one or range of shard keys.
+5) Zone cannot share range, nor they have overlapping range.
+6) MongoDB provide *updateZoneKeyRange* command and helper method *updateZoneKeyRange* and *addShardTag*.
+7) since 4.0.2. updateZoneKeyRange* has helper method updateZoneKeyRange* and *addTagRange*. 
+
+Balancer -
+1) Balancer attempts to evenly distribute the cluster, across all shards in cluster.
+2) For each chunk marked for migration, balancer checks each possible destination shard for configured destination.
