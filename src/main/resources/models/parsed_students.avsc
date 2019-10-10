@@ -1,0 +1,14 @@
+{
+  "namespace": "io.confluent.developer.avro",
+  "type": "record",
+  "name": "ProcessedStudents",
+  "fields": [
+    {"name": "id", "type": "long"},
+    {"name": "name", "type": "string"},
+    {"name": "doj", "type": "string"},
+    {"name": "classId", "type": "int"},
+    {"name": "class", "type": "string"},
+    {"name": "subject", "type": "string"},
+    {"name": "remarks", "type": "string"}
+  ]
+}
